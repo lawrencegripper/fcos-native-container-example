@@ -1,0 +1,9 @@
+[Unit]
+Description=Update the host with the latest oci image
+After=network-online.target
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/rpm-ostree-container-update.sh
+[Install]
+WantedBy=multi-user.target

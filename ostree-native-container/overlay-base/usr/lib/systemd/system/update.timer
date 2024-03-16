@@ -1,0 +1,12 @@
+[Unit]
+Description=Ensure the oci image for the host is updated
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=4h
+Persistent=true
+# Note: This finds and activates a service of the same name so `rpm-ostree-update.service` will be triggered
+
+[Install]
+WantedBy=timers.target

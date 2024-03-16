@@ -1,0 +1,21 @@
+[Unit]
+Description=Layer tailscale with rpm-ostree
+Wants=network-online.target
+After=network-online.target
+Before=zincati.service
+StartLimitIntervalSec=600
+StartLimitBurst=15
+
+ConditionPathExists=!/var/lib/%N.stamp
+ConditionPathExists=/usr/bin/tailscale
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/tailscale.env
+ExecStart=/usr/bin/systemctl enable --now tailscaled
+ExecStart=/usr/bin/tailscale up --authkey ${AUTHKEY}
+ExecStart=/bin/touch /var/lib/%N.stamp
+
+[Install]
+WantedBy=multi-user.target

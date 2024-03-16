@@ -1,0 +1,25 @@
+variant: fcos
+version: 1.4.0
+storage:
+  files:
+    - path: /etc/hostname
+      mode: 0644
+      contents:
+        inline: |
+          k3s
+    - path: /etc/rpm-ostree-container-rebase.env
+      mode: 0644
+      contents:
+        inline: |
+          # This file has envs used by the 'rebase.service' unit when it runs
+          IMAGE_URL=ghcr.io/lawrencegripper/homenet-fcos:k3s
+    - path: /etc/rancher/k3s/registries.yaml
+      contents:
+        inline: |
+          # See https://docs.k3s.io/installation/private-registry
+          # this allows for login to private gh registries I use
+          configs:
+            ghcr.io:
+              auth:
+                username: ghcr.io
+                password: {{ op://Personal/homenet/ghcrpat }}

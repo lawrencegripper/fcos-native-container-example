@@ -1,0 +1,97 @@
+variant: fcos
+version: 1.4.0
+ignition:
+  config:
+    merge:
+      - local: ./machine-config.ign
+passwd:
+  users:
+    - name: lawrencegripper
+      groups:
+        - sudo
+      ssh_authorized_keys:
+        - {{ op://Personal/homenet/ssh/public-key }}
+storage:
+  files:
+    - path: /etc/tailscale.env
+      mode: 0644
+      contents:
+        inline: |
+          # This file has envs used by the 'tailscale-configure.service' unit when it runs
+          AUTHKEY={{ op://Personal/homenet/tailscale/auth-key }}
+    - path: /etc/rpm-ostree-container-rebase.env
+      mode: 0644
+      contents:
+        inline: |
+          # This file has envs used by the 'rebase.service' unit when it runs
+          IMAGE_URL=ghcr.io/lawrencegripper/homenet-fcos:base
+    # Configure sudo with no password for my user
+    - path: /etc/sudoers.d/lawrencegripper
+      mode: 0644
+      contents:
+        inline: |
+          lawrencegripper ALL=(ALL) NOPASSWD:ALL
+  disks:
+    - device: /dev/disk/by-id/coreos-boot-disk
+      # The link to the block device the OS was booted from.
+      # We do not want to wipe the partition table since this is the primary
+      # device.
+      wipe_table: false
+      partitions:
+      - number: 4
+        label: root
+        # Allocate at least 8 GiB to the rootfs. See NOTE above about this.
+        size_mib: 8192
+        resize: true
+      - size_mib: 0
+        # We assign a descriptive label to the partition. This is important
+        # for referring to it in a device-agnostic way in other parts of the
+        # configuration.
+        label: var
+    - device: /dev/vdb
+      wipe_table: false
+      partitions:
+      - size_mib: 0
+        start_mib: 0
+        label: iscsi
+  filesystems:
+    - path: /var
+      device: /dev/disk/by-partlabel/var
+      format: ext4
+      with_mount_unit: true
+    - path: /var/mnt/data
+      device: /dev/disk/by-partlabel/iscsi
+      format: ext4
+      wipe_filesystem: false
+      with_mount_unit: true
+systemd:
+  units:
+    - name: rebase.service # Our custom unit for rebasing the host with the latest oci image
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Fetch and deploy target image
+        # Only run on the firstboot
+        ConditionFirstBoot=true
+        Wants=network-online.target
+        After=network-online.target
+        StartLimitIntervalSec=600
+        StartLimitBurst=15
+        [Service]
+        # This ordering is important
+        After=coreos-ignition-firstboot-complete.service
+        Type=oneshot
+        RemainAfterExit=yes
+        EnvironmentFile=/etc/rpm-ostree-container-rebase.env
+        ExecStart=/usr/bin/rpm-ostree rebase --reboot --bypass-driver ostree-unverified-registry:${IMAGE_URL}
+        [Install]
+        WantedBy=multi-user.target
+    - name: serial-getty@ttyS0.service
+      dropins:
+      - name: autologin-core.conf
+        contents: |
+          [Service]
+          # Override Execstart in main unit
+          ExecStart=
+          # Add new Execstart with `-` prefix to ignore failure`
+          ExecStart=-/usr/sbin/agetty --autologin core --noclear %I $TERM

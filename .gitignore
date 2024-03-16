@@ -1,0 +1,5 @@
+./output/
+*.qcow2
+*.ign
+*.bu
+config.bu.tmpl
