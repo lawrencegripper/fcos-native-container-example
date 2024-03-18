@@ -10,6 +10,7 @@ build-fcos-native-container:
 		-f machine-config-fcos/ostree-native-container/homenet-fcos.containerfile \
 		--target homenet-fcos-base \
 		--tag $(FCOS_HOMENET_REPO):base \
+		--no-cache \
 		machine-config-fcos/ostree-native-container/
 	docker push $(FCOS_HOMENET_REPO):base
 
@@ -18,6 +19,7 @@ build-fcos-native-container:
 		-f machine-config-fcos/ostree-native-container/homenet-fcos.containerfile \
 		--target homenet-fcos-docker \
 		--tag $(FCOS_HOMENET_REPO):docker \
+		--no-cache \
 		machine-config-fcos/ostree-native-container/
 	docker push $(FCOS_HOMENET_REPO):docker
 
@@ -26,5 +28,6 @@ build-fcos-native-container:
 		-f machine-config-fcos/ostree-native-container/homenet-fcos.containerfile \
 		--target homenet-fcos-k3s \
 		--tag $(FCOS_HOMENET_REPO):k3s \
+		--no-cache \
 		machine-config-fcos/ostree-native-container/
 	docker push $(FCOS_HOMENET_REPO):k3s
